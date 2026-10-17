@@ -1,0 +1,3 @@
+#!/bin/bash
+ip addr add 192.168.100.2/24 dev eth0
+mongod --bind_ip_all --fork --logpath /var/log/mongodb.log
