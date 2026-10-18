@@ -52,3 +52,6 @@ logs/
 Thumbs.db
 
 # Keep Kathara lab.conf, *.startup, Dockerfiles and shared assets versioned.
+
+# TOL TCL generato
+/TOL_TCL.xlsx
