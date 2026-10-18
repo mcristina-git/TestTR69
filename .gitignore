@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Runtime logs and packet captures
+logs/
+*.log
+*.pcap
+*.pcapng
+
+# Generated CPE exports (repository root only)
+/all_cpe_params.json
+/device_raw.json
+/cpe_datamodel_full.json
+/cpe_datamodel_flat.csv
+/cpe_datamodel_flat.xlsx
+
+# Generated test reports
+/bbf_compliance_report.xlsx
+/Report_Parametri_CPE_TCL.xlsx
+/Report_TR143_TCL_5G.pptx
+/report_audit_tr069.pptx
+/test.xlsx
+
+# TR-143 download payloads
+/test_50MB.bin
+/tr143_server/test_50MB.bin
+
+# Editor and OS temporary files
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Keep Kathara lab.conf, *.startup, Dockerfiles and shared assets versioned.
+
+# TOL TCL generato
+/TOL_TCL.xlsx

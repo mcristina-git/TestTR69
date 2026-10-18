@@ -1,0 +1,26 @@
+#!/bin/bash
+ip addr add 192.168.100.1/24 dev eth0
+ip addr add 192.168.111.254/24 dev eth1
+
+sleep 3
+
+mkdir -p /opt/genieacs
+cat << 'CONF' > /opt/genieacs/genieacs.env
+GENIEACS_JWT_SECRET=laboratorio_cpe_huawei_secret_key_2026
+GENIEACS_UI_JWT_SECRET=laboratorio_cpe_huawei_secret_key_2026
+GENIEACS_MONGODB_CONNECTION_URL=mongodb://192.168.100.2:27017/genieacs
+GENIEACS_CWMP_INTERFACE=0.0.0.0
+GENIEACS_CWMP_PORT=7557
+GENIEACS_NBI_INTERFACE=0.0.0.0
+GENIEACS_NBI_PORT=7547
+GENIEACS_UI_INTERFACE=0.0.0.0
+GENIEACS_UI_PORT=3000
+CONF
+
+set -a
+. /opt/genieacs/genieacs.env
+set +a
+
+genieacs-cwmp > /tmp/genieacs-cwmp.log 2>&1 &
+genieacs-nbi > /tmp/genieacs-nbi.log 2>&1 &
+genieacs-ui > /tmp/genieacs-ui.log 2>&1 &
