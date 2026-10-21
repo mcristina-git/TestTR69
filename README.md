@@ -175,3 +175,14 @@ Network endpoints and container parameters can be customized without modifying t
 
 - **Editing Slides**: To customize editorial text or graphics, edit `report_template_tr069.pptx` (not `report_audit_tr069.pptx`, which is overwritten on each run). Keep all 13 template slides and the shape IDs updated by the validator on slides 1–8.
 - **Proposed Extended Scenarios (Slides 10–13)**: The **Hyperway IDU/ODU** startup sequence matrices (two startup orders × two delay intervals of 5s and 300s) and the **network interruption/degradation scenarios** documented in slides 10–13 are architectural test proposals, not automated routines executed by this script. Running them requires dedicated power/link control hardware, a controllable WAN/cellular topology, and agreed pass/fail timeout criteria.
+## Acknowledgements and Third-Party Software
+
+This project uses **[Kathará](https://github.com/KatharaFramework/Kathara)**, an open-source, container-based network emulation framework developed by the Computer Networks and Security Research Group at Roma Tre University.
+
+Kathará provides a flexible environment for network emulation and experimentation. In this project, it is used as part of a proof of concept exploring automated testing and validation workflows for TR-069/TR-181-enabled FWA Customer Premises Equipment (CPE).
+
+- **Kathará Framework:** https://github.com/KatharaFramework/Kathara
+- **Official Kathará Labs and Tutorials:** https://github.com/KatharaFramework/Kathara-Labs
+- **Official Website:** https://www.kathara.org/
+
+All rights to Kathará remain with their respective authors and contributors. Please refer to the original repository for its license and attribution requirements.
