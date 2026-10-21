@@ -1,14 +1,19 @@
 #!/bin/bash
-ip addr add 192.168.100.1/24 dev eth0
-ip addr add 192.168.111.254/24 dev eth1
+ACS_MGMT_CIDR="${ACS_MGMT_CIDR:-10.0.100.1/24}"
+ACS_CPE_CIDR="${ACS_CPE_CIDR:-10.0.111.254/24}"
+MONGO_HOST="${MONGO_HOST:-10.0.100.2}"
+JWT_SECRET="${GENIEACS_JWT_SECRET:-change_me_tr069_lab_jwt_secret}"
+
+ip addr add "${ACS_MGMT_CIDR}" dev eth0
+ip addr add "${ACS_CPE_CIDR}" dev eth1
 
 sleep 3
 
 mkdir -p /opt/genieacs
-cat << 'CONF' > /opt/genieacs/genieacs.env
-GENIEACS_JWT_SECRET=laboratorio_cpe_huawei_secret_key_2026
-GENIEACS_UI_JWT_SECRET=laboratorio_cpe_huawei_secret_key_2026
-GENIEACS_MONGODB_CONNECTION_URL=mongodb://192.168.100.2:27017/genieacs
+cat << CONF > /opt/genieacs/genieacs.env
+GENIEACS_JWT_SECRET=${JWT_SECRET}
+GENIEACS_UI_JWT_SECRET=${JWT_SECRET}
+GENIEACS_MONGODB_CONNECTION_URL=mongodb://${MONGO_HOST}:27017/genieacs
 GENIEACS_CWMP_INTERFACE=0.0.0.0
 GENIEACS_CWMP_PORT=7557
 GENIEACS_NBI_INTERFACE=0.0.0.0

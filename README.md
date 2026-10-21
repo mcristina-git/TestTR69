@@ -7,7 +7,7 @@ This project provides an **automated laboratory testbed and validation suite** d
 - **TR-069 (CWMP)**: CPE WAN Management Protocol session handling, `Inform` / `InformResponse` lifecycle, `PeriodicInformInterval` timing compliance, `GetParameterValues` (GPV), `SetParameterValues` (SPV), and `GetParameterAttributes` (GPA).
 - **TR-181 Issue 2 (`Device:2`)**: Full data model discovery, structural inspection, read/write capability verification, interface statistics consistency, and security/redaction auditing.
 - **TR-143 & Network Diagnostics**: Active throughput and reachability diagnostics (`DownloadDiagnostics` and `IPPing`) triggered via CWMP against a controlled local test server.
-- **Operator TOL Compliance**: Automated execution and reporting of the 78 test cases defined in the reference operator matrix (`TOL _Huawei_H173-383.xlsx`), producing ready-to-deliver **Excel workbooks**, **JSON dumps**, **packet-level PCAP evidence**, and an **executive PowerPoint audit report**.
+- **Operator TOL Compliance**: Automated execution and reporting of the 78 test cases defined in the reference operator matrix (`tol_standard.xlsx`), producing ready-to-deliver **Excel workbooks**, **JSON dumps**, **packet-level PCAP evidence**, and an **executive PowerPoint audit report**.
 
 ---
 
@@ -16,16 +16,16 @@ This project provides an **automated laboratory testbed and validation suite** d
 The testbed combines a containerized **Kathará / Docker** network environment with a single-file Python orchestration and validation agent (`tr069_validator_agent.py`):
 
 1. **Kathará & Docker Emulated Infrastructure (`lab.conf`)**:
-   - **ACS Node (`acs` — `Dockerfile.genieacs`, `acs.startup`)**: Runs **GenieACS v1.2.9** on Node.js 20 (`local/genieacs:latest`), dual-homed on the internal management network (`mgmt_net`, `192.168.100.1/24`) and bridged to the physical CPE network interface (`cpe_net` bridged to `enp3s0`, `192.168.111.254/24`). Exposes:
+   - **ACS Node (`acs` — `Dockerfile.genieacs`, `acs.startup`)**: Runs **GenieACS v1.2.9** on Node.js 20 (`local/genieacs:latest`), dual-homed on the internal management network (`mgmt_net`, `<ACS_MGMT_IP>/24`) and bridged to the physical CPE network interface (`cpe_net` bridged to `<HOST_ETH_IFACE>`, `<ACS_CPE_IP>/24`). Exposes:
      - `7557/tcp`: CWMP endpoint for CPE communication (`genieacs-cwmp`).
      - `7547/tcp`: Northbound REST API (`genieacs-nbi`) used by the validator agent.
      - `3000/tcp`: GenieACS Web UI (`genieacs-ui`).
-   - **Database Node (`mongo` — `Dockerfile.mongo`, `mongo.startup`)**: Runs **MongoDB 5.0** (`local/mongo:5.0`) on `192.168.100.2:27017`, storing device trees, CWMP tasks, presets, provisions, and faults.
+   - **Database Node (`mongo` — `Dockerfile.mongo`, `mongo.startup`)**: Runs **MongoDB 5.0** (`local/mongo:5.0`) on `<MONGO_IP>:27017`, storing device trees, CWMP tasks, presets, provisions, and faults.
 2. **Packet Capture & Protocol Dissection (`tcpdump` + `tshark`)**:
    - Uses an ephemeral Docker helper container (instantiated from the already-installed Kathará lab image on `--net=host`) to run `tcpdump` on the CWMP port without disrupting the running lab.
    - Uses **Wireshark CLI (`tshark`)** on the host to dissect HTTP/SOAP XML payloads, isolating `2 PERIODIC` `Inform` requests and matching HTTP `200 OK` `InformResponse` packets.
 3. **TR-143 HTTP Payload Server (`tr143_server/`)**:
-   - Serves a deterministic 50 MiB binary payload (`tr143_server/test_50MB.bin`) over HTTP (`http://192.168.1.219:8080/test_50MB.bin` by default) to validate `Device.IP.Diagnostics.DownloadDiagnostics`.
+   - Serves a deterministic 50 MiB binary payload (`tr143_server/test_50MB.bin`) over HTTP (`http://<TR143_SERVER_IP>:8080/test_50MB.bin`) to validate `Device.IP.Diagnostics.DownloadDiagnostics`.
 4. **Python Validator Agent (`tr069_validator_agent.py`)**:
    - Self-contained orchestrator running in the local virtual environment (`venv/`).
    - Uses Python standard library modules (`urllib.request`, `subprocess`, `xml.etree.ElementTree`, `fcntl`, `hashlib`, `unittest`) alongside `openpyxl` (`3.1.5`) for Excel generation and `python-pptx` (`1.0.2`) for automated PowerPoint report compilation.
@@ -48,7 +48,7 @@ A standard execution of `tr069_validator_agent.py` performs an end-to-end valida
 - Inspects active GenieACS presets and provisions (`interval_policy`) to detect whether the ACS enforces a fixed `PeriodicInformInterval` (e.g., 30 seconds) for the CPE's serial number.
 
 ### 3. TOL Test Suite Execution (`TOLSuite` Class — 78 Test Cases)
-Evaluates all 78 rows of the source operator matrix (`TOL _Huawei_H173-383.xlsx`):
+Evaluates all 78 rows of the source operator matrix (`tol_standard.xlsx`):
 - **Read-Only Audits (Default Mode)**:
   - **Device Identity & Versions**: Validates `Manufacturer`, `OUI`, `ProductClass`, `SerialNumber`, `HardwareVersion`, `SoftwareVersion`, `ModemFirmwareVersion`, and `UpTime`.
   - **IMEI Validation**: Reads both `Device.DeviceInfo.IMEI` and `Device.Cellular.Interface.1.IMEI`, checking 15-digit numeric format compliance and cross-node consistency.
@@ -69,7 +69,7 @@ Evaluates all 78 rows of the source operator matrix (`TOL _Huawei_H173-383.xlsx`
 
 ### 4. Packet-Level Periodic Inform Capture & Verification (`PeriodicCapture`)
 - Reads the active CWMP port from `Device.ManagementServer.URL` and `PeriodicInformInterval` from the CPE.
-- Spawns a temporary container on the host network to capture TCP traffic on the CWMP port over two full inform cycles, then filters and saves only the relevant TCP streams to `proof.pcap` (with `0600` permissions and SHA-256 integrity hashing).
+- Spawns a temporary container on the host network to capture TCP traffic on the CWMP port over two full inform cycles, then filters and saves only the relevant TCP streams to `periodic_inform.pcap` (with `0600` permissions and SHA-256 integrity hashing).
 - Dissects the PCAP via `tshark` (`decode_pcap_messages` and `pcap_periodic_rows`) to:
   1. Match the exact CPE `SerialNumber` inside the SOAP `Inform` XML body.
   2. Extract three consecutive `2 PERIODIC` `Inform` requests and verify that each receives an HTTP `200 OK` SOAP `InformResponse` on the same TCP stream.
@@ -80,11 +80,11 @@ Evaluates all 78 rows of the source operator matrix (`TOL _Huawei_H173-383.xlsx`
 ### 5. Secret Redaction & Multi-Format Data Model Export
 - Automatically identifies sensitive parameters (`password`, `passphrase`, `secret`, `token`, `privatekey`, `presharedkey`, `wepkey`, `username`, `credential`, `pin`, `puk`, `psk`) via regex (`SENSITIVE_PATH`).
 - Masks sensitive values as `[oscurato]` in tables and recursively scrubs any occurrence of those secret strings from device IDs, metadata, notes, and log excerpts (`redact_secrets`, `sanitise_text`).
-- Explicitly distinguishes between **empty string** (`valore vuoto`), **`null`**, and **unread node** (`non letto`).
+- Explicitly distinguishes between **empty string** (`vuoto`), **`null`**, and **unread node** (`non letto`).
 - Exports the full sanitized tree to `cpe_datamodel_full.json` and `cpe_datamodel_flat.xlsx`, and updates the baseline audit table in `test.xlsx`.
 
 ### 6. Automated PowerPoint & Excel Report Generation
-- **Excel Output (`TOL_TCL.xlsx`)**: Copies `TOL _Huawei_H173-383.xlsx`, writes test outcomes and parameter values into Column `J` (with conditional color formatting for `PASS`, `FAIL`, `BLOCCATO`, `PARZIALE`) and technical notes into Column `K`, and creates the `Valori_TCL` sheet containing every read parameter, value, status, scope, and UTC timestamp. Before completion, it cryptographically verifies that source columns `A:I`, cell styles, and merged ranges of the original template were not altered.
+- **Excel Output (`TOL_TCL.xlsx`)**: Copies `tol_standard.xlsx`, writes test outcomes and parameter values into Column `J` (with conditional color formatting for `PASS`, `FAIL`, `BLOCCATO`, `PARZIALE`) and technical notes into Column `K`, and creates the `Valori_TCL` sheet containing every read parameter, value, status, scope, and UTC timestamp. Before completion, it cryptographically verifies that source columns `A:I`, cell styles, and merged ranges of the original template were not altered.
 - **PowerPoint Output (`report_audit_tr069.pptx`)**: Built from the 13-slide editorial template (`report_template_tr069.pptx`):
   - **Slides 1–8**: Dynamically updated with current audit metadata, TOL summary counts across all 78 test cases, TR-181 data model coverage metrics, and packet-level `2 PERIODIC` PCAP timing evidence (displaying `WARN` instead of `PASS` if PCAP evidence is missing, stale `>1h`, or mismatched).
   - **Slides 9–13**: Preserved verbatim from the editorial template (including testbed architecture diagrams, proposed Hyperway IDU/ODU power-up matrices, and network impairment test proposals).
@@ -121,11 +121,25 @@ venv/bin/python tr069_validator_agent.py --pcap /path/to/capture.pcap
 venv/bin/python tr069_validator_agent.py --report-only --template report_template_tr069.pptx
 
 # Specify a custom HTTP/HTTPS URL for the 50 MiB TR-143 DownloadDiagnostics payload
-venv/bin/python tr069_validator_agent.py --tol-active --download-url http://192.168.1.219:8080/test_50MB.bin
+venv/bin/python tr069_validator_agent.py --tol-active --download-url http://<TR143_SERVER_IP>:8080/test_50MB.bin
 
 # Run the 22 isolated unit and pipeline self-tests (no ACS or CPE connection required)
 venv/bin/python tr069_validator_agent.py --self-test
 ```
+
+### Environment Variables
+
+Network endpoints and container parameters can be customized without modifying the code:
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `GENIEACS_NBI_URL` | `http://127.0.0.1:7547` | GenieACS Northbound Interface (NBI) REST API endpoint |
+| `TR143_DOWNLOAD_URL` | `http://192.0.2.1:8080/test_50MB.bin` | Default HTTP URL for the 50 MiB TR-143 `DownloadDiagnostics` payload |
+| `ACS_MGMT_CIDR` | `10.0.100.1/24` | Internal management network CIDR for the GenieACS container (`acs.startup`) |
+| `ACS_CPE_CIDR` | `10.0.111.254/24` | CPE-facing network CIDR for the GenieACS container (`acs.startup`) |
+| `MONGO_MGMT_CIDR` | `10.0.100.2/24` | Internal management network CIDR for the MongoDB container (`mongo.startup`) |
+| `MONGO_HOST` | `10.0.100.2` | MongoDB host IP used by GenieACS (`acs.startup`) |
+| `GENIEACS_JWT_SECRET` | `change_me_tr069_lab_jwt_secret` | JWT signing secret for GenieACS UI and CWMP services |
 
 ### Exit Codes
 
@@ -144,16 +158,16 @@ venv/bin/python tr069_validator_agent.py --self-test
 
 - `tr069_validator_agent.py`: Single-entry-point Python validator for TOL execution, TR-069/TR-181 auditing, PCAP capture/dissection, and Excel/PowerPoint report generation.
 - `lab.conf`, `acs.startup`, `mongo.startup`, `Dockerfile.genieacs`, `Dockerfile.mongo`: Kathará and Docker configuration defining the GenieACS + MongoDB testbed topology.
-- `TOL _Huawei_H173-383.xlsx`: Original read-only operator TOL template (columns `A:I` are strictly preserved).
-- `TOL_TCL.xlsx`: Generated TOL workbook containing TCL CPE test results (`J`), technical notes (`K`), and the full parameter sheet (`Valori_TCL`).
+- `tol_standard.xlsx`: Standard read-only operator TOL template (columns `A:I` are strictly preserved).
+- `TOL_TCL.xlsx`: Generated TOL workbook containing CPE test results (`J`), technical notes (`K`), and the full parameter sheet (`Valori_TCL`).
 - `test.xlsx`: Baseline synthetic audit workbook (automatically recreated from built-in baseline expectations if missing; expects `PeriodicInformInterval = 30`).
 - `report_template_tr069.pptx`: 13-slide editorial PowerPoint template used as the input layout for report generation (slides 9–13 contain static editorial content and architecture/test proposals).
 - `report_audit_tr069.pptx`: Generated final PowerPoint presentation (slides 1–8 dynamically updated, slides 9–13 preserved, slides 14+ populated with the full TR-181 data model appendix).
-- `cpe_datamodel_full.json` & `cpe_datamodel_flat.xlsx`: Complete exported CPE data model with sensitive credentials redacted and explicit state tagging (`valore vuoto`, `null`, `non letto`).
+- `cpe_datamodel_full.json` & `cpe_datamodel_flat.xlsx`: Complete exported CPE data model with sensitive credentials redacted and explicit state tagging (`vuoto`, `null`, `non letto`).
 - `periodic_inform_audit.log`: Human-readable summary of verified CWMP Periodic Inform frames, HTTP 200 responses, and measured intervals.
 - `tr143_server/test_50MB.bin`: 50 MiB payload served by the local HTTP server for TR-143 `DownloadDiagnostics` testing.
 - `venv/` & `requirements.txt`: Python virtual environment and dependencies (`openpyxl==3.1.5`, `python-pptx==1.0.2`).
-- `logs/`: Timestamped execution directories containing structured event logs (`events.jsonl`), TOL results (`results.json`), private filtered PCAP captures (`proof.pcap`, mode `0600`), and workspace consolidation records (`logs/consolidation_20261017/cleanup_manifest.json`).
+- `logs/`: Timestamped execution directories containing structured event logs (`events.jsonl`), TOL results (`results.json`), private filtered PCAP captures (`periodic_inform.pcap`, mode `0600`), and workspace consolidation records.
 
 ---
 

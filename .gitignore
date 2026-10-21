@@ -44,10 +44,12 @@ logs/
 /test_50MB.bin
 /tr143_server/test_50MB.bin
 
-# Editor and OS temporary files
+# Editor, Office/LibreOffice lock and OS temporary files
 *.swp
 *.swo
 *~
+.~lock.*
+~$*
 .DS_Store
 Thumbs.db
 

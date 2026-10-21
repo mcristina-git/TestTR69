@@ -471,9 +471,9 @@ def build_presentation(device=None):
     return OUTPUT_PPTX
 
 # tol_tcl
-SOURCE = BASE / 'TOL _Huawei_H173-383.xlsx'
+SOURCE = BASE / 'tol_standard.xlsx'
 OUTPUT = BASE / 'TOL_TCL.xlsx'
-NBI = 'http://127.0.0.1:7547'
+NBI = os.environ.get('GENIEACS_NBI_URL', 'http://127.0.0.1:7547')
 INTERVAL = 'Device.ManagementServer.PeriodicInformInterval'
 PIT = 'Device.ManagementServer.PeriodicInformTime'
 DIRECT = {8, 9, 10, 11, 15, 18, 20, 30, 31, 32, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 56, 57, 58, 59, 62, 63, 64, 67, 74}
@@ -786,7 +786,7 @@ class TOLSuite:
         self.result(31, 'PASS' if not absent and (not stale) else 'PARZIALE', {'parametri letti': len(params), 'valori mai letti': len(absent), 'timestamp obsoleti': len(stale)}, 'Elenco completo nel foglio Valori_TCL e nelle slide Data model completo. Scope: tutti i parametri restituiti dal CPE, non ogni parametro opzionale previsto dallo standard.')
         self.full_model = {p: redact_secrets(display_value(p, n), a.secrets) for p, n in params.items()}
         self.apn_values()
-        self.get(33, prefixes=('Device.Cellular.Interface.1.X_CUSTOM_RadioInfo',), partial=True, notes='GET LTE/NR eseguito. Composizione GlobalCellID e formati sono da definire per TCL; non applicata la formula Huawei.')
+        self.get(33, prefixes=('Device.Cellular.Interface.1.X_CUSTOM_RadioInfo',), partial=True, notes='GET LTE/NR eseguito. Composizione GlobalCellID e formati sono da definire per TCL; non applicata la formula standard.')
         self.get(34, names=('Device.Cellular.Interface.1.X_CUSTOM_ConnectedBand',), partial=True, notes='GET bande connesse. Il significato per carrier aggregation e lo stato dei singoli component carrier richiedono conferma TCL.')
         self.get(35, prefixes=('Device.Cellular.Interface.1.X_CUSTOM_RadioInfo',), partial=True, notes='GET radio LTE/NR. Campi NR vuoti e bandwidth cellulare non esposta: dati assenti non trasformati in PASS di copertura completa.')
         self.get(38, prefixes=('Device.WiFi.AccessPoint.', 'Device.Hosts.'), partial=True, notes='GET contatori associati e Hosts. Con zero client Wi-Fi non sono verificabili i dettagli delle istanze AssociatedDevice.')
@@ -812,7 +812,7 @@ class TOLSuite:
         self.get(65, prefixes=('Device.Cellular.', 'Device.IP.Interface.'), partial=True, notes='La riga Get WLAN contiene requisiti WAN/mobile. GET dei campi TCL disponibili; schema operatore e mapping completo da confermare.')
         self.get(66, prefixes=('Device.VoiceService.',), partial=True, notes='SOLA LETTURA SIP/VoIP. Configurazione credenziali, associazione porte voce e chiamate di prova non eseguite.')
         self.get(67, prefixes=('Device.DHCPv4.Server.',), notes='GET dei campi DHCP richiesti dal TOL; nessuna modifica al servizio DHCP.')
-        self.get(68, prefixes=('Device.Ethernet.Interface.', 'Device.Cellular.Interface.'), partial=True, notes='Modello Device:2 TCL. Vari campi cellulari del TOL Huawei non sono esposti con la stessa semantica: copertura GET parziale.')
+        self.get(68, prefixes=('Device.Ethernet.Interface.', 'Device.Cellular.Interface.'), partial=True, notes='Modello Device:2 TCL. Vari campi cellulari del TOL standard non sono esposti con la stessa semantica: copertura GET parziale.')
         self.get(74, names=('Device.DeviceInfo.IMEI', 'Device.Cellular.Interface.1.IMEI'), nonempty=('Device.DeviceInfo.IMEI', 'Device.Cellular.Interface.1.IMEI'), notes='GET IMEI e coerenza dei due nodi; confronto etichetta non eseguito.')
         imei1 = a.value('Device.DeviceInfo.IMEI')
         imei2 = a.value('Device.Cellular.Interface.1.IMEI')
@@ -1328,8 +1328,8 @@ def run_test_suite(device=None):
     print(f'[+] Test completati. File aggiornato: {EXCEL_FILE}')
     print(f'[+] Evidenza Periodic Inform salvata in: {LOG_FILE}')
     return dev
-DOWNLOAD_URL = 'http://192.168.1.219:8080/test_50MB.bin'
-AUDIT_BASELINE = [['Device.DeviceInfo.HardwareVersion', 'HH516L-V3.0'], ['Device.DeviceInfo.IMEI', 'not null'], ['Device.DeviceInfo.ModemFirmwareVersion', 'HH516L_FT_03.00_17'], ['Device.DeviceInfo.SoftwareVersion', 'HH516L_FT_03.00_17'], ['Device.DeviceInfo.SpecVersion', '1.0'], ['Device.ManagementServer.ConnectionRequestPassword', 'not null'], ['Device.ManagementServer.ConnectionRequestURL', 'http://10.49.27.145:7170/ConnectionRequest'], ['Device.ManagementServer.ConnectionRequestUsername', 'not null'], ['Device.ManagementServer.PeriodicInformEnable', True], ['Device.ManagementServer.PeriodicInformInterval', 30], ['Device.ManagementServer.PeriodicInformTime', "verificare che rispetti l'invio ogni quanto definito in Device.ManagementServer.PeriodicInformInterval"], ['DeviceID.Manufacturer', 'TCL Communication'], ['DeviceID.OUI', 'BC9424'], ['DeviceID.ProductClass', 'TCL 5G CPE'], ['DeviceID.SerialNumber', 'not null'], ['Device.ManagementServer.PeriodicInformInterval', 'SET']]
+DOWNLOAD_URL = os.environ.get('TR143_DOWNLOAD_URL', 'http://192.0.2.1:8080/test_50MB.bin')
+AUDIT_BASELINE = [['Device.DeviceInfo.HardwareVersion', 'HH516L-V3.0'], ['Device.DeviceInfo.IMEI', 'not null'], ['Device.DeviceInfo.ModemFirmwareVersion', 'HH516L_FT_03.00_17'], ['Device.DeviceInfo.SoftwareVersion', 'HH516L_FT_03.00_17'], ['Device.DeviceInfo.SpecVersion', '1.0'], ['Device.ManagementServer.ConnectionRequestPassword', 'not null'], ['Device.ManagementServer.ConnectionRequestURL', 'not null'], ['Device.ManagementServer.ConnectionRequestUsername', 'not null'], ['Device.ManagementServer.PeriodicInformEnable', True], ['Device.ManagementServer.PeriodicInformInterval', 30], ['Device.ManagementServer.PeriodicInformTime', "verificare che rispetti l'invio ogni quanto definito in Device.ManagementServer.PeriodicInformInterval"], ['DeviceID.Manufacturer', 'TCL Communication'], ['DeviceID.OUI', 'not null'], ['DeviceID.ProductClass', 'TCL 5G CPE'], ['DeviceID.SerialNumber', 'not null'], ['Device.ManagementServer.PeriodicInformInterval', 'SET']]
 # Acquisizione e verifica PCAP: nessun fallback che consideri tutti gli Inform periodici.
 def _command(args, timeout=20):
     return subprocess.run(args, capture_output=True, text=True, timeout=timeout, check=True)

@@ -1,3 +1,4 @@
 #!/bin/bash
-ip addr add 192.168.100.2/24 dev eth0
+MONGO_MGMT_CIDR="${MONGO_MGMT_CIDR:-10.0.100.2/24}"
+ip addr add "${MONGO_MGMT_CIDR}" dev eth0
 mongod --bind_ip_all --fork --logpath /var/log/mongodb.log
